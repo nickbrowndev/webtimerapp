@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Pixel Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        body.fullscreen-active {
+            background: #111827;
+            padding: 0;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 700px;
+            width: 100%;
+        }
+        
+        .container.fullscreen-mode {
+            background: #111827;
+            box-shadow: none;
+            border-radius: 0;
+            max-width: 100%;
+        }
+        
+        .container.fullscreen-mode h1 {
+            display: none;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .grid-container {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .pixel-grid {
+            display: grid;
+            gap: 1px;
+            width: 100%;
+        }
+
+        .pixel {
+            aspect-ratio: 1;
+            border: 0.5px solid #e5e7eb;
+            transition: background-color 0.3s;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .time-value {
+            font-size: 3em;
+            font-weight: bold;
+            color: #1f2937;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+
+        .progress-text {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #d1d5db;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .color-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+            z-index: 1;
+        }
+
+        .color-swatch.selected {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+            transform: scale(1.15);
+            z-index: 2;
+        }
+
+        .color-swatch:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .aspect-btn {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .aspect-btn:hover:not(:disabled) {
+            background: #d1d5db;
+        }
+
+        .aspect-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .preset-btn {
+            background: #e5e7eb;
+            color: #374151;
+            flex: 1;
+        }
+
+        .preset-btn:hover:not(:disabled) {
+            background: #d1d5db;
+        }
+
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-start {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: #059669;
+        }
+
+        .btn-pause {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-pause:hover:not(:disabled) {
+            background: #d97706;
+        }
+
+        .btn-reset {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-reset:hover:not(:disabled) {
+            background: #4b5563;
+        }
+
+        .btn-fullscreen {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-fullscreen:hover:not(:disabled) {
+            background: #2563eb;
+        }
+
+        .fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #111827;
+            z-index: 9999;
+            padding: 0;
+            border-radius: 0;
+        }
+
+        .fullscreen-mode .grid-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            border-radius: 0;
+        }
+
+        .fullscreen-mode .pixel-grid {
+            width: 100%;
+            height: 100%;
+            max-width: 100vw;
+            max-height: 100vh;
+            object-fit: contain;
+        }
+
+        .exit-fullscreen {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .exit-fullscreen:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        .settings-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background 0.2s;
+        }
+        
+        .settings-toggle:hover {
+            background: #e5e7eb;
+        }
+        
+        .settings-toggle span {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .toggle-icon {
+            transition: transform 0.3s;
+        }
+        
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+        
+        .collapsible-settings {
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s;
+        }
+        
+        .collapsible-settings.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <h1>Visual Pixel Timer</h1>
+        
+        <div class="grid-container" id="gridContainer">
+            <div class="pixel-grid" id="pixelGrid"></div>
+        </div>
+
+        <div id="controls">
+            <div class="time-display">
+                <div class="time-value" id="timeDisplay">0:00</div>
+                <div class="progress-text" id="progressText">0% complete</div>
+            </div>
+
+            <div class="duration-presets">
+                <button class="preset-duration-btn" data-minutes="1">1 min</button>
+                <button class="preset-duration-btn" data-minutes="5">5 min</button>
+                <button class="preset-duration-btn" data-minutes="10">10 min</button>
+                <button class="preset-duration-btn" data-minutes="15">15 min</button>
+                <button class="preset-duration-btn" data-minutes="25">25 min</button>
+                <button class="preset-duration-btn" data-minutes="30">30 min</button>
+                <button class="preset-duration-btn" data-minutes="60">60 min</button>
+            </div>
+
+            <div class="control-group">
+                <label>Duration: <span id="durationLabel">60 seconds</span></label>
+                <input type="range" id="durationSlider" min="10" max="3600" step="10" value="60">
+            </div>
+
+            <div class="settings-toggle" id="settingsToggle">
+                <span>Advanced Settings</span>
+                <div class="toggle-icon" id="toggleIcon">▼</div>
+            </div>
+
+            <div class="collapsible-settings" id="collapsibleSettings">
+                <div class="control-group">
+                    <label>Start Color</label>
+                    <div class="color-palette" id="startColorPalette"></div>
+                </div>
+
+                <div class="control-group">
+                    <label>End Color</label>
+                    <div class="color-palette" id="endColorPalette"></div>
+                </div>
+
+                <div class="control-group">
+                    <label>Grid Density: <span id="gridSizeLabel">20 (20x20 = 400 pixels)</span></label>
+                    <input type="range" id="gridSizeSlider" min="10" max="100" step="5" value="20">
+                </div>
+
+                <div class="control-group">
+                    <label>Aspect Ratio</label>
+                    <div class="button-group">
+                        <button class="aspect-btn active" data-ratio="1:1">1:1</button>
+                        <button class="aspect-btn" data-ratio="16:9">16:9</button>
+                        <button class="aspect-btn" data-ratio="21:9">21:9</button>
+                        <button class="aspect-btn" data-ratio="4:3">4:3</button>
+                        <button class="aspect-btn" data-ratio="16:10">16:10</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-buttons">
+                <button class="btn-start" id="startBtn">▶ Start</button>
+                <button class="btn-pause hidden" id="pauseBtn">⏸ Pause</button>
+                <button class="btn-reset" id="resetBtn">↻ Reset</button>
+                <button class="btn-fullscreen" id="fullscreenBtn">⛶ Fullscreen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let duration = 60;
+        let timeLeft = 60;
+        let isRunning = false;
+        let gridSize = 20;
+        let gridWidth = 20;
+        let gridHeight = 20;
+        let aspectRatio = '1:1';
+        let startColor = '#ffffff';
+        let endColor = '#000000';
+        let pixelOrder = [];
+        let intervalId = null;
+        let isFullscreen = false;
+        let isFlashing = false;
+        let flashIntervalId = null;
+
+        const pixelGrid = document.getElementById('pixelGrid');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const progressText = document.getElementById('progressText');
+        const durationSlider = document.getElementById('durationSlider');
+        const durationLabel = document.getElementById('durationLabel');
+        const gridSizeSlider = document.getElementById('gridSizeSlider');
+        const gridSizeLabel = document.getElementById('gridSizeLabel');
+        const startColorPalette = document.getElementById('startColorPalette');
+        const endColorPalette = document.getElementById('endColorPalette');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const gridContainer = document.getElementById('gridContainer');
+        const controls = document.getElementById('controls');
+        const mainContainer = document.getElementById('mainContainer');
+        const settingsToggle = document.getElementById('settingsToggle');
+        const toggleIcon = document.getElementById('toggleIcon');
+        const collapsibleSettings = document.getElementById('collapsibleSettings');
+        
+        let settingsExpanded = true;
+
+        // Predefined color palette with three saturation levels
+        const colorPalette = [
+            // High saturation (vivid)
+            { name: 'White', value: '#ffffff' },
+            { name: 'Red', value: '#ef4444' },
+            { name: 'Orange', value: '#f97316' },
+            { name: 'Yellow', value: '#eab308' },
+            { name: 'Lime', value: '#84cc16' },
+            { name: 'Green', value: '#22c55e' },
+            { name: 'Cyan', value: '#06b6d4' },
+            { name: 'Blue', value: '#3b82f6' },
+            { name: 'Purple', value: '#a855f7' },
+            { name: 'Pink', value: '#ec4899' },
+            
+            // Medium saturation (muted)
+            { name: 'Light Gray', value: '#d1d5db' },
+            { name: 'Rose', value: '#fb7185' },
+            { name: 'Peach', value: '#fdba74' },
+            { name: 'Sand', value: '#fde047' },
+            { name: 'Light Lime', value: '#bef264' },
+            { name: 'Mint', value: '#86efac' },
+            { name: 'Sky', value: '#7dd3fc' },
+            { name: 'Light Blue', value: '#93c5fd' },
+            { name: 'Lavender', value: '#c4b5fd' },
+            { name: 'Light Pink', value: '#f9a8d4' },
+            
+            // Low saturation (pastel/dark)
+            { name: 'Black', value: '#000000' },
+            { name: 'Dark Red', value: '#991b1b' },
+            { name: 'Brown', value: '#9a3412' },
+            { name: 'Olive', value: '#854d0e' },
+            { name: 'Dark Lime', value: '#3f6212' },
+            { name: 'Dark Green', value: '#166534' },
+            { name: 'Teal', value: '#115e59' },
+            { name: 'Navy', value: '#1e3a8a' },
+            { name: 'Dark Purple', value: '#6b21a8' },
+            { name: 'Magenta', value: '#9f1239' }
+        ];
+
+        function createColorPalette(paletteElement, selectedColor, callback) {
+            paletteElement.innerHTML = '';
+            colorPalette.forEach(color => {
+                const swatch = document.createElement('button');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color.value;
+                swatch.title = color.name;
+                swatch.dataset.color = color.value;
+                
+                if (color.value === selectedColor) {
+                    swatch.classList.add('selected');
+                }
+                
+                swatch.addEventListener('click', () => {
+                    if (!isRunning) {
+                        paletteElement.querySelectorAll('.color-swatch').forEach(s => {
+                            s.classList.remove('selected');
+                        });
+                        swatch.classList.add('selected');
+                        callback(color.value);
+                    }
+                });
+                
+                paletteElement.appendChild(swatch);
+            });
+        }
+
+        function disableColorPalettes(disabled) {
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.disabled = disabled;
+            });
+        }
+
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function generatePixelOrder() {
+            const totalPixels = gridWidth * gridHeight;
+            const indices = Array.from({ length: totalPixels }, (_, i) => i);
+            pixelOrder = shuffleArray(indices);
+        }
+
+        function createGrid() {
+            pixelGrid.innerHTML = '';
+            pixelGrid.style.gridTemplateColumns = `repeat(${gridWidth}, 1fr)`;
+            pixelGrid.style.aspectRatio = `${gridWidth}/${gridHeight}`;
+            
+            const totalPixels = gridWidth * gridHeight;
+            for (let i = 0; i < totalPixels; i++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'pixel';
+                pixel.style.backgroundColor = startColor;
+                pixelGrid.appendChild(pixel);
+            }
+            
+            generatePixelOrder();
+        }
+
+        function updatePixels() {
+            if (isFlashing) {
+                return; // Don't update pixels while flashing
+            }
+            
+            const totalPixels = gridWidth * gridHeight;
+            const progress = 1 - (timeLeft / duration);
+            const pixelsFilled = Math.floor(progress * totalPixels);
+            const filledSet = new Set(pixelOrder.slice(0, pixelsFilled));
+            
+            const pixels = pixelGrid.querySelectorAll('.pixel');
+            pixels.forEach((pixel, i) => {
+                pixel.style.backgroundColor = filledSet.has(i) ? endColor : startColor;
+            });
+        }
+        
+        function startFlashing() {
+            isFlashing = true;
+            let showEnd = true;
+            
+            // Set longer transition for smooth flashing
+            const pixels = pixelGrid.querySelectorAll('.pixel');
+            pixels.forEach(pixel => {
+                pixel.style.transition = 'background-color 1.5s ease-in-out';
+            });
+            
+            flashIntervalId = setInterval(() => {
+                const pixels = pixelGrid.querySelectorAll('.pixel');
+                pixels.forEach(pixel => {
+                    pixel.style.backgroundColor = showEnd ? endColor : startColor;
+                });
+                showEnd = !showEnd;
+            }, 2000); // Flash every 2 seconds
+        }
+        
+        function stopFlashing() {
+            isFlashing = false;
+            if (flashIntervalId) {
+                clearInterval(flashIntervalId);
+                flashIntervalId = null;
+            }
+            // Reset transition speed to normal
+            const pixels = pixelGrid.querySelectorAll('.pixel');
+            pixels.forEach(pixel => {
+                pixel.style.transition = 'background-color 0.3s';
+            });
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            timeDisplay.textContent = formatTime(timeLeft);
+            const progress = Math.round((1 - (timeLeft / duration)) * 100);
+            progressText.textContent = `${progress}% complete`;
+            updatePixels();
+        }
+
+        function handleStart() {
+            if (timeLeft <= 0) {
+                timeLeft = duration;
+            }
+            stopFlashing(); // Stop flashing when starting
+            isRunning = true;
+            startBtn.classList.add('hidden');
+            pauseBtn.classList.remove('hidden');
+            disableControls(true);
+            
+            intervalId = setInterval(() => {
+                timeLeft -= 0.1;
+                if (timeLeft <= 0) {
+                    timeLeft = 0;
+                    updateDisplay();
+                    handlePause();
+                    // Wait for final pixel animation to complete before flashing
+                    setTimeout(() => {
+                        startFlashing();
+                    }, 100);
+                }
+                updateDisplay();
+            }, 100);
+        }
+
+        function handlePause() {
+            isRunning = false;
+            startBtn.classList.remove('hidden');
+            pauseBtn.classList.add('hidden');
+            disableControls(false);
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        }
+
+        function handleReset() {
+            handlePause();
+            stopFlashing(); // Stop flashing when resetting
+            timeLeft = duration;
+            updateDisplay();
+        }
+
+        function disableControls(disabled) {
+            durationSlider.disabled = disabled;
+            gridSizeSlider.disabled = disabled;
+            disableColorPalettes(disabled);
+            document.querySelectorAll('.aspect-btn, .preset-btn').forEach(btn => {
+                btn.disabled = disabled;
+            });
+        }
+
+        function handleAspectRatioChange(ratio) {
+            aspectRatio = ratio;
+            const baseSize = gridSize;
+            
+            switch(ratio) {
+                case '1:1':
+                    gridWidth = baseSize;
+                    gridHeight = baseSize;
+                    break;
+                case '16:9':
+                    gridWidth = Math.round(baseSize * 16 / 9);
+                    gridHeight = baseSize;
+                    break;
+                case '21:9':
+                    gridWidth = Math.round(baseSize * 21 / 9);
+                    gridHeight = baseSize;
+                    break;
+                case '4:3':
+                    gridWidth = Math.round(baseSize * 4 / 3);
+                    gridHeight = baseSize;
+                    break;
+                case '16:10':
+                    gridWidth = Math.round(baseSize * 16 / 10);
+                    gridHeight = baseSize;
+                    break;
+            }
+            
+            updateGridSizeLabel();
+            createGrid();
+            if (!isRunning) {
+                updateDisplay();
+            }
+        }
+
+        function handleResolutionPreset(width, height) {
+            gridWidth = width;
+            gridHeight = height;
+            gridSize = height;
+            gridSizeSlider.value = height;
+            
+            const divisor = gcd(width, height);
+            aspectRatio = `${width/divisor}:${height/divisor}`;
+            
+            document.querySelectorAll('.aspect-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.ratio === aspectRatio);
+            });
+            
+            updateGridSizeLabel();
+            createGrid();
+            updateDisplay();
+        }
+
+        function updateGridSizeLabel() {
+            const totalPixels = gridWidth * gridHeight;
+            gridSizeLabel.textContent = `${gridSize} (${gridWidth}x${gridHeight} = ${totalPixels.toLocaleString()} pixels)`;
+        }
+
+        function updateDurationLabel() {
+            if (duration >= 60) {
+                const mins = Math.floor(duration / 60);
+                const secs = duration % 60;
+                durationLabel.textContent = `${mins} min ${secs} sec`;
+            } else {
+                durationLabel.textContent = `${duration} seconds`;
+            }
+        }
+
+        function toggleFullscreen() {
+            isFullscreen = !isFullscreen;
+            
+            if (isFullscreen) {
+                // Request actual browser fullscreen
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                } else if (document.documentElement.msRequestFullscreen) {
+                    document.documentElement.msRequestFullscreen();
+                }
+                
+                document.body.classList.add('fullscreen-active');
+                mainContainer.classList.add('fullscreen-mode');
+                controls.classList.add('hidden');
+                gridContainer.style.padding = '0';
+                gridContainer.style.background = '#111827';
+                gridContainer.style.boxShadow = 'none';
+                
+                const exitBtn = document.createElement('button');
+                exitBtn.className = 'exit-fullscreen';
+                exitBtn.id = 'exitFullscreen';
+                exitBtn.innerHTML = '✕';
+                exitBtn.onclick = toggleFullscreen;
+                gridContainer.appendChild(exitBtn);
+            } else {
+                // Exit browser fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                
+                document.body.classList.remove('fullscreen-active');
+                mainContainer.classList.remove('fullscreen-mode');
+                controls.classList.remove('hidden');
+                gridContainer.style.padding = '20px';
+                gridContainer.style.background = '#f9fafb';
+                gridContainer.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.1)';
+                
+                const exitBtn = document.getElementById('exitFullscreen');
+                if (exitBtn) exitBtn.remove();
+            }
+        }
+        
+        // Handle ESC key to exit fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && isFullscreen) {
+                toggleFullscreen();
+            }
+        });
+        
+        document.addEventListener('webkitfullscreenchange', () => {
+            if (!document.webkitFullscreenElement && isFullscreen) {
+                toggleFullscreen();
+            }
+        });
+
+        // Event Listeners
+        startBtn.addEventListener('click', handleStart);
+        pauseBtn.addEventListener('click', handlePause);
+        resetBtn.addEventListener('click', handleReset);
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+        durationSlider.addEventListener('input', (e) => {
+            duration = parseInt(e.target.value);
+            if (!isRunning) {
+                timeLeft = duration;
+                updateDisplay();
+            }
+            updateDurationLabel();
+        });
+
+        gridSizeSlider.addEventListener('input', (e) => {
+            gridSize = parseInt(e.target.value);
+            handleAspectRatioChange(aspectRatio);
+        });
+
+        // Color palette event handlers
+        createColorPalette(startColorPalette, startColor, (color) => {
+            startColor = color;
+            updatePixels();
+        });
+
+        createColorPalette(endColorPalette, endColor, (color) => {
+            endColor = color;
+            updatePixels();
+        });
+
+        document.querySelectorAll('.aspect-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.aspect-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                handleAspectRatioChange(btn.dataset.ratio);
+            });
+        });
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const width = parseInt(btn.dataset.width);
+                const height = parseInt(btn.dataset.height);
+                handleResolutionPreset(width, height);
+            });
+        });
+        
+        // Duration preset buttons
+        document.querySelectorAll('.preset-duration-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const minutes = parseInt(btn.dataset.minutes);
+                handleDurationPreset(minutes);
+            });
+        });
+        
+        // Settings toggle
+        settingsToggle.addEventListener('click', () => {
+            settingsExpanded = !settingsExpanded;
+            if (settingsExpanded) {
+                collapsibleSettings.classList.remove('collapsed');
+                toggleIcon.classList.add('rotated');
+            } else {
+                collapsibleSettings.classList.add('collapsed');
+                toggleIcon.classList.remove('rotated');
+            }
+        });
+
+        // Initialize
+        createGrid();
+        updateDisplay();
+        updateDurationLabel();
+        updateGridSizeLabel();
+    </script>
+</body>
+</html>
