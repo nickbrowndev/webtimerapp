@@ -63,14 +63,28 @@
 
         .pixel-grid {
             display: grid;
-            gap: 1px;
+            gap: 0;
             width: 100%;
+            line-height: 0;
+            font-size: 0;
+            margin: 0;
+            padding: 0;
         }
 
         .pixel {
-            aspect-ratio: 1;
-            border: 0.5px solid #e5e7eb;
+            width: 100%;
+            height: 100%;
+            border: none;
             transition: background-color 0.3s;
+            display: block;
+            margin: 0;
+            padding: 0;
+            aspect-ratio: 1;
+        }
+        
+        .pixel::before,
+        .pixel::after {
+            display: none;
         }
 
         .time-display {
@@ -101,6 +115,10 @@
             color: #374151;
             margin-bottom: 10px;
             font-size: 0.9em;
+        }
+
+        .duration-presets {
+            display: flex;
         }
 
         input[type="range"] {
@@ -387,18 +405,22 @@
                 </div>
 
                 <div class="control-group">
-                    <label>Grid Density: <span id="gridSizeLabel">20 (20x20 = 400 pixels)</span></label>
-                    <input type="range" id="gridSizeSlider" min="10" max="100" step="5" value="20">
-                </div>
-
-                <div class="control-group">
-                    <label>Aspect Ratio</label>
-                    <div class="button-group">
-                        <button class="aspect-btn active" data-ratio="1:1">1:1</button>
-                        <button class="aspect-btn" data-ratio="16:9">16:9</button>
-                        <button class="aspect-btn" data-ratio="21:9">21:9</button>
-                        <button class="aspect-btn" data-ratio="4:3">4:3</button>
-                        <button class="aspect-btn" data-ratio="16:10">16:10</button>
+                    <label>Pixel Size: <span id="gridSizeLabel">4x4 pixels</span></label>
+                    <input type="range" id="gridSizeSlider" min="0" max="13" step="1" value="2">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75em; color: #6b7280; margin-top: 5px;">
+                        <span>1x1</span>
+                        <span>2x2</span>
+                        <span>4x4</span>
+                        <span>6x6</span>
+                        <span>8x8</span>
+                        <span>10x10</span>
+                        <span>12x12</span>
+                        <span>14x14</span>
+                        <span>16x16</span>
+                        <span>20x20</span>
+                        <span>24x24</span>
+                        <span>32x32</span>
+                        <span>64x64</span>
                     </div>
                 </div>
             </div>
@@ -413,20 +435,63 @@
     </div>
 
     <script>
+        const MAX_PIXELS = 100000;
         let duration = 60;
         let timeLeft = 60;
         let isRunning = false;
-        let gridSize = 20;
-        let gridWidth = 20;
-        let gridHeight = 20;
-        let aspectRatio = '1:1';
+        let pixelSize = 4; // Pixel size in pixels (1, 2, 4, 8, 16, 32, 64)
+        let pixelOrder = [];
         let startColor = '#ffffff';
         let endColor = '#000000';
-        let pixelOrder = [];
         let intervalId = null;
         let isFullscreen = false;
         let isFlashing = false;
         let flashIntervalId = null;
+        let gridWidth = 20;
+        let gridHeight = 20;
+        let wakeLock = null;
+        
+        // Pixel size options (powers of 2)
+        const pixelSizes = [1, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 64];
+        
+        loadState();
+
+        // Calculate grid dimensions from viewport and pixel size
+        function updateGridFromViewport() {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            
+            // Calculate how many pixels fit in viewport
+            gridWidth = Math.floor(vw / pixelSize);
+            gridHeight = Math.floor(vh / pixelSize);
+            
+            // Ensure minimum of 1x1
+            gridWidth = Math.max(1, gridWidth);
+            gridHeight = Math.max(1, gridHeight);
+            
+            // Check if total pixels exceeds limit
+            const totalPixels = gridWidth * gridHeight;
+            if (totalPixels > MAX_PIXELS) {
+                // Find the next larger pixel size that keeps us under the limit
+                const currentIndex = pixelSizes.indexOf(pixelSize);
+                for (let i = currentIndex + 1; i < pixelSizes.length; i++) {
+                    const testSize = pixelSizes[i];
+                    const testWidth = Math.floor(vw / testSize);
+                    const testHeight = Math.floor(vh / testSize);
+                    const testTotal = testWidth * testHeight;
+                    
+                    if (testTotal <= MAX_PIXELS) {
+                        pixelSize = testSize;
+                        gridWidth = testWidth;
+                        gridHeight = testHeight;
+                        gridSizeSlider.value = i;
+                        break;
+                    }
+                }
+            }
+            
+            updateGridSizeLabel();
+        }
 
         const pixelGrid = document.getElementById('pixelGrid');
         const timeDisplay = document.getElementById('timeDisplay');
@@ -522,8 +587,25 @@
             });
         }
 
+        function handleGridSizeChange(newSize) {
+            gridSize = newSize;
+            saveState();
+            handleAspectRatioChange(aspectRatio);
+        }
+
         function gcd(a, b) {
             return b === 0 ? a : gcd(b, a % b);
+        }
+
+        function handleDurationPreset(minutes) {
+            stopFlashing(); // Stop any flashing
+            const seconds = minutes * 60;
+            duration = seconds;
+            timeLeft = seconds;
+            durationSlider.value = seconds;
+            updateDurationLabel();
+            updateDisplay();
+            handleStart();
         }
 
         function shuffleArray(array) {
@@ -544,7 +626,7 @@
         function createGrid() {
             pixelGrid.innerHTML = '';
             pixelGrid.style.gridTemplateColumns = `repeat(${gridWidth}, 1fr)`;
-            pixelGrid.style.aspectRatio = `${gridWidth}/${gridHeight}`;
+            pixelGrid.style.gridTemplateRows = `repeat(${gridHeight}, 1fr)`;
             
             const totalPixels = gridWidth * gridHeight;
             for (let i = 0; i < totalPixels; i++) {
@@ -562,11 +644,12 @@
                 return; // Don't update pixels while flashing
             }
             
-            const totalPixels = gridWidth * gridHeight;
+            const total = gridWidth * gridHeight;
             const progress = 1 - (timeLeft / duration);
-            const pixelsFilled = Math.floor(progress * totalPixels);
+            const pixelsFilled = Math.floor(progress * total);
             const filledSet = new Set(pixelOrder.slice(0, pixelsFilled));
             
+            // TODO this sets all the pixels each time and is very inefficient
             const pixels = pixelGrid.querySelectorAll('.pixel');
             pixels.forEach((pixel, i) => {
                 pixel.style.backgroundColor = filledSet.has(i) ? endColor : startColor;
@@ -622,11 +705,15 @@
             if (timeLeft <= 0) {
                 timeLeft = duration;
             }
+            saveState();
             stopFlashing(); // Stop flashing when starting
             isRunning = true;
             startBtn.classList.add('hidden');
             pauseBtn.classList.remove('hidden');
             disableControls(true);
+            
+            // Request wake lock to prevent screen from sleeping
+            requestWakeLock();
             
             intervalId = setInterval(() => {
                 timeLeft -= 0.1;
@@ -651,6 +738,8 @@
             if (intervalId) {
                 clearInterval(intervalId);
             }
+            // Release wake lock when pausing
+            releaseWakeLock();
         }
 
         function handleReset() {
@@ -658,6 +747,33 @@
             stopFlashing(); // Stop flashing when resetting
             timeLeft = duration;
             updateDisplay();
+        }
+        
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    
+                    // Re-acquire wake lock if it's released (e.g., user switches tabs)
+                    wakeLock.addEventListener('release', () => {
+                        // Wake lock released
+                    });
+                }
+            } catch (err) {
+                // Wake lock not available or not allowed - silently continue
+            }
+        }
+        
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release()
+                    .then(() => {
+                        wakeLock = null;
+                    })
+                    .catch((err) => {
+                        // Ignore release errors
+                    });
+            }
         }
 
         function disableControls(disabled) {
@@ -670,60 +786,16 @@
         }
 
         function handleAspectRatioChange(ratio) {
-            aspectRatio = ratio;
-            const baseSize = gridSize;
-            
-            switch(ratio) {
-                case '1:1':
-                    gridWidth = baseSize;
-                    gridHeight = baseSize;
-                    break;
-                case '16:9':
-                    gridWidth = Math.round(baseSize * 16 / 9);
-                    gridHeight = baseSize;
-                    break;
-                case '21:9':
-                    gridWidth = Math.round(baseSize * 21 / 9);
-                    gridHeight = baseSize;
-                    break;
-                case '4:3':
-                    gridWidth = Math.round(baseSize * 4 / 3);
-                    gridHeight = baseSize;
-                    break;
-                case '16:10':
-                    gridWidth = Math.round(baseSize * 16 / 10);
-                    gridHeight = baseSize;
-                    break;
-            }
-            
-            updateGridSizeLabel();
-            createGrid();
-            if (!isRunning) {
-                updateDisplay();
-            }
+            // This function is no longer needed but kept for compatibility
         }
 
         function handleResolutionPreset(width, height) {
-            gridWidth = width;
-            gridHeight = height;
-            gridSize = height;
-            gridSizeSlider.value = height;
-            
-            const divisor = gcd(width, height);
-            aspectRatio = `${width/divisor}:${height/divisor}`;
-            
-            document.querySelectorAll('.aspect-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.ratio === aspectRatio);
-            });
-            
-            updateGridSizeLabel();
-            createGrid();
-            updateDisplay();
+            // This function is no longer needed but kept for compatibility
         }
 
         function updateGridSizeLabel() {
-            const totalPixels = gridWidth * gridHeight;
-            gridSizeLabel.textContent = `${gridSize} (${gridWidth}x${gridHeight} = ${totalPixels.toLocaleString()} pixels)`;
+            const total = gridWidth * gridHeight;
+            gridSizeLabel.textContent = `${pixelSize}x${pixelSize} pixels (${total.toLocaleString()} total)`;
         }
 
         function updateDurationLabel() {
@@ -783,6 +855,54 @@
                 if (exitBtn) exitBtn.remove();
             }
         }
+
+        function storageAvailable(type) {
+          let storage;
+          try {
+            storage = window[type];
+            const x = "__storage_test__";
+            storage.setItem(x, x);
+            storage.removeItem(x);
+            return true;
+          } catch (e) {
+            return (
+              e instanceof DOMException &&
+              e.name === "QuotaExceededError" &&
+              // acknowledge QuotaExceededError only if there's something already stored
+              storage &&
+              storage.length !== 0
+            );
+          }
+        }
+
+        function saveState() {
+            if (storageAvailable("localStorage")) {
+                localStorage.setItem("setting.duration", duration);
+                localStorage.setItem("setting.startColor", startColor);
+                localStorage.setItem("setting.endColor", endColor);
+                localStorage.setItem("setting.pixelSize", pixelSize);
+            } else {
+                console.error("Unable to save settings. Localstorage not available.");
+            }
+        }
+
+        function loadState() {
+
+            if (window.localStorage) {
+                let savedDuration = localStorage.getItem("setting.duration");
+                duration = savedDuration ? savedDuration : duration;
+                let savedStartColor = localStorage.getItem("setting.startColor");
+                startColor = savedStartColor ? savedStartColor : startColor;
+                let savedEndColor = localStorage.getItem("setting.endColor");
+                endColor = savedEndColor ? savedEndColor : endColor;
+                let savedPixelSize = localStorage.getItem("setting.pixelSize");
+                pixelSize = savedPixelSize ? savedPixelSize : pixelSize;
+            } else {
+                console.error("Unable to load settings. Localstorage not available.");
+            }
+        }
+
+            
         
         // Handle ESC key to exit fullscreen
         document.addEventListener('fullscreenchange', () => {
@@ -813,44 +933,55 @@
         });
 
         gridSizeSlider.addEventListener('input', (e) => {
-            gridSize = parseInt(e.target.value);
-            handleAspectRatioChange(aspectRatio);
-        });
-
-        // Color palette event handlers
-        createColorPalette(startColorPalette, startColor, (color) => {
-            startColor = color;
-            updatePixels();
-        });
-
-        createColorPalette(endColorPalette, endColor, (color) => {
-            endColor = color;
-            updatePixels();
-        });
-
-        document.querySelectorAll('.aspect-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.aspect-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                handleAspectRatioChange(btn.dataset.ratio);
-            });
-        });
-
-        document.querySelectorAll('.preset-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const width = parseInt(btn.dataset.width);
-                const height = parseInt(btn.dataset.height);
-                handleResolutionPreset(width, height);
-            });
+            const index = parseInt(e.target.value);
+            const requestedPixelSize = pixelSizes[index];
+            
+            // Calculate what the total would be with this pixel size
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const testWidth = Math.floor(vw / requestedPixelSize);
+            const testHeight = Math.floor(vh / requestedPixelSize);
+            const testTotal = testWidth * testHeight;
+            
+            // Only allow if under MAX_PIXELS pixels
+            if (testTotal <= MAX_PIXELS) {
+                pixelSize = requestedPixelSize;
+                updateGridFromViewport();
+                createGrid();
+                if (!isRunning) {
+                    updateDisplay();
+                }
+            } else {
+                // Revert slider to current valid value
+                const currentIndex = pixelSizes.indexOf(pixelSize);
+                e.target.value = currentIndex;
+                
+                // Show a brief warning
+                const label = gridSizeLabel;
+                const originalText = label.textContent;
+                label.textContent = `Too many pixels! Maximum is ${MAX_PIXELS.toLocaleString()}. Use a larger pixel size.`;
+                label.style.color = '#ef4444';
+                setTimeout(() => {
+                    label.textContent = originalText;
+                    label.style.color = '';
+                }, 2000);
+            }
         });
         
-        // Duration preset buttons
-        document.querySelectorAll('.preset-duration-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const minutes = parseInt(btn.dataset.minutes);
-                handleDurationPreset(minutes);
-            });
-        });
+        function setStartColor(color) {
+            startColor = color;
+            updatePixels();
+        }
+
+        function setEndColor(color) {
+            endColor = color;
+            updatePixels();
+        }
+
+        // Color palette event handlers
+        createColorPalette(startColorPalette, startColor, setStartColor);
+
+        createColorPalette(endColorPalette, endColor, setEndColor);
         
         // Settings toggle
         settingsToggle.addEventListener('click', () => {
@@ -865,10 +996,38 @@
         });
 
         // Initialize
+        updateGridFromViewport();
         createGrid();
         updateDisplay();
         updateDurationLabel();
         updateGridSizeLabel();
+        
+        // Update grid when window is resized
+        window.addEventListener('resize', () => {
+            if (!isRunning) {
+                updateGridFromViewport();
+                createGrid();
+                updateDisplay();
+            }
+        });
+        
+        // Re-acquire wake lock when page becomes visible again
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible' && isRunning) {
+                await requestWakeLock();
+            }
+        });
+        
+        // Duration preset buttons - attach after DOM is ready
+        setTimeout(() => {
+            document.querySelectorAll('.preset-duration-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const minutes = parseInt(btn.getAttribute('data-minutes'));
+                    handleDurationPreset(minutes);
+                });
+            });
+        }, 100);
     </script>
 </body>
 </html>
