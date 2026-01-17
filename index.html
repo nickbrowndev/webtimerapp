@@ -891,6 +891,7 @@
             if (window.localStorage) {
                 let savedDuration = localStorage.getItem("setting.duration");
                 duration = savedDuration ? savedDuration : duration;
+                timeLeft = duration;
                 let savedStartColor = localStorage.getItem("setting.startColor");
                 startColor = savedStartColor ? savedStartColor : startColor;
                 let savedEndColor = localStorage.getItem("setting.endColor");
