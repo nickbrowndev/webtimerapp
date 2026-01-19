@@ -31,7 +31,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
-            max-width: 700px;
+            max-width: 80vw;
             width: 100%;
         }
         
@@ -454,8 +454,6 @@
         // Pixel size options (powers of 2)
         const pixelSizes = [1, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 64];
         
-        loadState();
-
         // Calculate grid dimensions from viewport and pixel size
         function updateGridFromViewport() {
             const vw = window.innerWidth;
@@ -514,6 +512,8 @@
         const collapsibleSettings = document.getElementById('collapsibleSettings');
         
         let settingsExpanded = true;
+
+        loadState();
 
         // Predefined color palette with three saturation levels
         const colorPalette = [
@@ -706,6 +706,7 @@
                 timeLeft = duration;
             }
             saveState();
+            collapseSettings();
             stopFlashing(); // Stop flashing when starting
             isRunning = true;
             startBtn.classList.add('hidden');
@@ -898,6 +899,8 @@
                 endColor = savedEndColor ? savedEndColor : endColor;
                 let savedPixelSize = localStorage.getItem("setting.pixelSize");
                 pixelSize = savedPixelSize ? savedPixelSize : pixelSize;
+
+                collapseSettings();
             } else {
                 console.error("Unable to load settings. Localstorage not available.");
             }
@@ -984,15 +987,23 @@
 
         createColorPalette(endColorPalette, endColor, setEndColor);
         
+        function expandSettings() {
+            collapsibleSettings.classList.remove('collapsed');
+            toggleIcon.classList.add('rotated');
+            settingsExpanded = true;
+        }
+
+        function collapseSettings() {
+            collapsibleSettings.classList.add('collapsed');
+            toggleIcon.classList.remove('rotated');
+            settingsExpanded = false;
+        }
         // Settings toggle
         settingsToggle.addEventListener('click', () => {
-            settingsExpanded = !settingsExpanded;
             if (settingsExpanded) {
-                collapsibleSettings.classList.remove('collapsed');
-                toggleIcon.classList.add('rotated');
+                collapseSettings();
             } else {
-                collapsibleSettings.classList.add('collapsed');
-                toggleIcon.classList.remove('rotated');
+                expandSettings();
             }
         });
 
