@@ -117,9 +117,6 @@
             font-size: 0.9em;
         }
 
-        .duration-presets {
-            display: flex;
-        }
 
         input[type="range"] {
             width: 100%;
@@ -210,6 +207,12 @@
         .aspect-btn.active {
             background: #3b82f6;
             color: white;
+        }
+
+        .duration-presets {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         .preset-btn {
@@ -374,13 +377,13 @@
             </div>
 
             <div class="duration-presets">
-                <button class="preset-duration-btn" data-minutes="1">1 min</button>
-                <button class="preset-duration-btn" data-minutes="5">5 min</button>
-                <button class="preset-duration-btn" data-minutes="10">10 min</button>
-                <button class="preset-duration-btn" data-minutes="15">15 min</button>
-                <button class="preset-duration-btn" data-minutes="25">25 min</button>
-                <button class="preset-duration-btn" data-minutes="30">30 min</button>
-                <button class="preset-duration-btn" data-minutes="60">60 min</button>
+                <button class="preset-btn" data-time="60000">1 min</button>
+                <button class="preset-btn" data-time="300000">5 min</button>
+                <button class="preset-btn" data-time="600000">10 min</button>
+                <button class="preset-btn" data-time="900000">15 min</button>
+                <button class="preset-btn" data-time="1500000">25 min</button>
+                <button class="preset-btn" data-time="1800000">30 min</button>
+                <button class="preset-btn" data-time="3600000">60 min</button>
             </div>
 
             <div class="control-group">
@@ -597,11 +600,11 @@
             return b === 0 ? a : gcd(b, a % b);
         }
 
-        function handleDurationPreset(minutes) {
+        function handleDurationPreset(time) {
             stopFlashing(); // Stop any flashing
-            const seconds = minutes * 60;
-            duration = seconds;
-            timeLeft = seconds;
+            const seconds = time / 1000;
+            duration = time;
+            timeLeft = time;
             durationSlider.value = seconds;
             updateDurationLabel();
             updateDisplay();
@@ -639,13 +642,17 @@
             generatePixelOrder();
         }
 
+        function getProgress() {
+            return 1 - (timeLeft / duration);
+        }
+
         function updatePixels() {
             if (isFlashing) {
                 return; // Don't update pixels while flashing
             }
             
             const total = gridWidth * gridHeight;
-            const progress = 1 - (timeLeft / duration);
+            const progress = getProgress();
             const pixelsFilled = Math.floor(progress * total);
             const filledSet = new Set(pixelOrder.slice(0, pixelsFilled));
             
@@ -695,8 +702,8 @@
         }
 
         function updateDisplay() {
-            timeDisplay.textContent = formatTime(timeLeft);
-            const progress = Math.round((1 - (timeLeft / duration)) * 100);
+            timeDisplay.textContent = formatTime(timeLeft / 1000);
+            const progress = Math.round(getProgress() * 100);
             progressText.textContent = `${progress}% complete`;
             updatePixels();
         }
@@ -705,30 +712,38 @@
             if (timeLeft <= 0) {
                 timeLeft = duration;
             }
-            saveState();
-            collapseSettings();
-            stopFlashing(); // Stop flashing when starting
-            isRunning = true;
-            startBtn.classList.add('hidden');
-            pauseBtn.classList.remove('hidden');
-            disableControls(true);
             
-            // Request wake lock to prevent screen from sleeping
-            requestWakeLock();
-            
-            intervalId = setInterval(() => {
-                timeLeft -= 0.1;
-                if (timeLeft <= 0) {
-                    timeLeft = 0;
+            if (!intervalId) {
+                saveState();
+                collapseSettings();
+                stopFlashing(); // Stop flashing when starting
+                isRunning = true;
+                startBtn.classList.add('hidden');
+                pauseBtn.classList.remove('hidden');
+                disableControls(true);
+                
+                // Request wake lock to prevent screen from sleeping
+                requestWakeLock();
+                
+                let lastIntervalTime = new Date().getTime();
+                
+                intervalId = setInterval(() => {
+                    let intervalTime = new Date().getTime();
+                    let elapsedTime = intervalTime - lastIntervalTime;
+                    lastIntervalTime = intervalTime;
+                    timeLeft = timeLeft - elapsedTime;
+                    if (timeLeft <= 0) {
+                        timeLeft = 0;
+                        updateDisplay();
+                        handlePause();
+                        // Wait for final pixel animation to complete before flashing
+                        setTimeout(() => {
+                            startFlashing();
+                        }, 100);
+                    }
                     updateDisplay();
-                    handlePause();
-                    // Wait for final pixel animation to complete before flashing
-                    setTimeout(() => {
-                        startFlashing();
-                    }, 100);
-                }
-                updateDisplay();
-            }, 100);
+                }, 100);
+            }
         }
 
         function handlePause() {
@@ -738,6 +753,7 @@
             disableControls(false);
             if (intervalId) {
                 clearInterval(intervalId);
+                intervalId = null;
             }
             // Release wake lock when pausing
             releaseWakeLock();
@@ -781,9 +797,6 @@
             durationSlider.disabled = disabled;
             gridSizeSlider.disabled = disabled;
             disableColorPalettes(disabled);
-            document.querySelectorAll('.aspect-btn, .preset-btn').forEach(btn => {
-                btn.disabled = disabled;
-            });
         }
 
         function handleAspectRatioChange(ratio) {
@@ -800,12 +813,13 @@
         }
 
         function updateDurationLabel() {
-            if (duration >= 60) {
-                const mins = Math.floor(duration / 60);
-                const secs = duration % 60;
+            const totalSeconds = duration / 1000;
+            if (totalSeconds >= 60) {
+                const mins = Math.floor(totalSeconds / 60 );
+                const secs = totalSeconds % 60;
                 durationLabel.textContent = `${mins} min ${secs} sec`;
             } else {
-                durationLabel.textContent = `${duration} seconds`;
+                durationLabel.textContent = `${totalSeconds} seconds`;
             }
         }
 
@@ -928,7 +942,7 @@
         fullscreenBtn.addEventListener('click', toggleFullscreen);
 
         durationSlider.addEventListener('input', (e) => {
-            duration = parseInt(e.target.value);
+            duration = parseInt(e.target.value) * 1000;
             if (!isRunning) {
                 timeLeft = duration;
                 updateDisplay();
@@ -1035,8 +1049,8 @@
             document.querySelectorAll('.preset-duration-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const minutes = parseInt(btn.getAttribute('data-minutes'));
-                    handleDurationPreset(minutes);
+                    const time = parseInt(btn.getAttribute('data-time'));
+                    handleDurationPreset(time);
                 });
             });
         }, 100);
