@@ -439,8 +439,8 @@
 
     <script>
         const MAX_PIXELS = 100000;
-        let duration = 60;
-        let timeLeft = 60;
+        let duration = 60000;
+        let timeLeft = 60000;
         let isRunning = false;
         let pixelSize = 4; // Pixel size in pixels (1, 2, 4, 8, 16, 32, 64)
         let pixelOrder = [];
@@ -1046,7 +1046,7 @@
         
         // Duration preset buttons - attach after DOM is ready
         setTimeout(() => {
-            document.querySelectorAll('.preset-duration-btn').forEach(btn => {
+            document.querySelectorAll('.preset-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
                     const time = parseInt(btn.getAttribute('data-time'));
