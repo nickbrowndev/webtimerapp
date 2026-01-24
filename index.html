@@ -42,67 +42,57 @@
             max-width: 100%;
         }
         
-        .container.fullscreen-mode h1 {
-            display: none;
-        }
-
-        h1 {
-            text-align: center;
-            color: #1f2937;
-            margin-bottom: 30px;
-            font-size: 2em;
-        }
-
         .grid-container {
             background: #f9fafb;
-            border-radius: 10px;
-            padding: 20px;
+            padding: 2px;
             margin-bottom: 30px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        .pixel-grid {
-            display: grid;
-            gap: 0;
-            width: 100%;
-            line-height: 0;
-            font-size: 0;
-            margin: 0;
-            padding: 0;
-        }
-
-        .pixel {
-            width: 100%;
-            height: 100%;
-            border: none;
-            transition: background-color 0.3s;
+        #pixelCanvas {
             display: block;
-            margin: 0;
-            padding: 0;
-            aspect-ratio: 1;
+            max-width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
         }
         
-        .pixel::before,
-        .pixel::after {
-            display: none;
+        .fullscreen-mode .grid-container {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            border-radius: 0;
+            padding: 0;
+            background: #111827;
+        }
+        
+        .fullscreen-mode #pixelCanvas {
+            max-width: 100vw;
+            max-height: 100vh;
+            width: auto;
+            height: auto;
         }
 
         .time-display {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .time-value {
-            font-size: 3em;
+            font-size: 2em;
             font-weight: bold;
             color: #1f2937;
             font-family: 'Courier New', monospace;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .progress-text {
             color: #6b7280;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .control-group {
@@ -116,7 +106,6 @@
             margin-bottom: 10px;
             font-size: 0.9em;
         }
-
 
         input[type="range"] {
             width: 100%;
@@ -132,49 +121,39 @@
             cursor: not-allowed;
         }
 
-        .color-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
         .color-palette {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
-            gap: 6px;
+            grid-template-rows: repeat(3, 1fr);
+            gap: 4px;
+            width: 100%;
         }
 
         .color-swatch {
             width: 100%;
             aspect-ratio: 1;
             border: 2px solid transparent;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
+            min-width: 0;
         }
 
         .color-swatch:hover {
-            transform: scale(1.15);
+            transform: scale(1.1);
             z-index: 1;
         }
 
         .color-swatch.selected {
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-            transform: scale(1.15);
+            transform: scale(1.1);
             z-index: 2;
         }
 
         .color-swatch:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
         }
 
         button {
@@ -193,20 +172,6 @@
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-        }
-
-        .aspect-btn {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .aspect-btn:hover:not(:disabled) {
-            background: #d1d5db;
-        }
-
-        .aspect-btn.active {
-            background: #3b82f6;
-            color: white;
         }
 
         .duration-presets {
@@ -230,6 +195,7 @@
             justify-content: center;
             gap: 12px;
             flex-wrap: wrap;
+            margin-bottom: 20px;
         }
 
         .btn-start {
@@ -280,24 +246,6 @@
             border-radius: 0;
         }
 
-        .fullscreen-mode .grid-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            border-radius: 0;
-        }
-
-        .fullscreen-mode .pixel-grid {
-            width: 100%;
-            height: 100%;
-            max-width: 100vw;
-            max-height: 100vh;
-            object-fit: contain;
-        }
-
         .exit-fullscreen {
             position: absolute;
             top: 20px;
@@ -306,16 +254,26 @@
             color: white;
             padding: 12px;
             border-radius: 8px;
+            z-index: 10000;
         }
 
         .exit-fullscreen:hover {
             background: rgba(255,255,255,0.3);
         }
 
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        .enter-fullscreen {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.1);
+            color: #374151;
+            padding: 12px;
+            border-radius: 8px;
+            z-index: 100;
+        }
+
+        .enter-fullscreen:hover {
+            background: rgba(0,0,0,0.15);
         }
 
         .hidden {
@@ -364,16 +322,23 @@
 </head>
 <body>
     <div class="container" id="mainContainer">
-        <h1>Visual Pixel Timer</h1>
         
         <div class="grid-container" id="gridContainer">
-            <div class="pixel-grid" id="pixelGrid"></div>
+            <canvas id="pixelCanvas"></canvas>
+            <button class="enter-fullscreen" id="enterFullscreen">⛶</button>
         </div>
 
         <div id="controls">
             <div class="time-display">
                 <div class="time-value" id="timeDisplay">0:00</div>
                 <div class="progress-text" id="progressText">0% complete</div>
+            </div>
+
+            <div class="control-buttons">
+                <button class="btn-start" id="startBtn">▶ Start</button>
+                <button class="btn-pause hidden" id="pauseBtn">⏸ Pause</button>
+                <button class="btn-reset" id="resetBtn">↻ Reset</button>
+                <button class="btn-fullscreen" id="fullscreenBtn">⛶ Fullscreen</button>
             </div>
 
             <div class="duration-presets">
@@ -409,7 +374,7 @@
 
                 <div class="control-group">
                     <label>Pixel Size: <span id="gridSizeLabel">4x4 pixels</span></label>
-                    <input type="range" id="gridSizeSlider" min="0" max="13" step="1" value="2">
+                    <input type="range" id="gridSizeSlider" min="0" max="12" step="1" value="2">
                     <div style="display: flex; justify-content: space-between; font-size: 0.75em; color: #6b7280; margin-top: 5px;">
                         <span>1x1</span>
                         <span>2x2</span>
@@ -427,13 +392,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="control-buttons">
-                <button class="btn-start" id="startBtn">▶ Start</button>
-                <button class="btn-pause hidden" id="pauseBtn">⏸ Pause</button>
-                <button class="btn-reset" id="resetBtn">↻ Reset</button>
-                <button class="btn-fullscreen" id="fullscreenBtn">⛶ Fullscreen</button>
-            </div>
         </div>
     </div>
 
@@ -442,7 +400,7 @@
         let duration = 60000;
         let timeLeft = 60000;
         let isRunning = false;
-        let pixelSize = 4; // Pixel size in pixels (1, 2, 4, 8, 16, 32, 64)
+        let pixelSize = 4;
         let pixelOrder = [];
         let startColor = '#ffffff';
         let endColor = '#000000';
@@ -453,27 +411,23 @@
         let gridWidth = 20;
         let gridHeight = 20;
         let wakeLock = null;
+        let flashProgress = 0;
+        let lastFlashTime = 0;
         
-        // Pixel size options (powers of 2)
         const pixelSizes = [1, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 64];
         
-        // Calculate grid dimensions from viewport and pixel size
         function updateGridFromViewport() {
             const vw = window.innerWidth;
             const vh = window.innerHeight;
             
-            // Calculate how many pixels fit in viewport
             gridWidth = Math.floor(vw / pixelSize);
             gridHeight = Math.floor(vh / pixelSize);
             
-            // Ensure minimum of 1x1
             gridWidth = Math.max(1, gridWidth);
             gridHeight = Math.max(1, gridHeight);
             
-            // Check if total pixels exceeds limit
             const totalPixels = gridWidth * gridHeight;
             if (totalPixels > MAX_PIXELS) {
-                // Find the next larger pixel size that keeps us under the limit
                 const currentIndex = pixelSizes.indexOf(pixelSize);
                 for (let i = currentIndex + 1; i < pixelSizes.length; i++) {
                     const testSize = pixelSizes[i];
@@ -494,7 +448,8 @@
             updateGridSizeLabel();
         }
 
-        const pixelGrid = document.getElementById('pixelGrid');
+        const pixelCanvas = document.getElementById('pixelCanvas');
+        const ctx = pixelCanvas.getContext('2d');
         const timeDisplay = document.getElementById('timeDisplay');
         const progressText = document.getElementById('progressText');
         const durationSlider = document.getElementById('durationSlider');
@@ -513,14 +468,13 @@
         const settingsToggle = document.getElementById('settingsToggle');
         const toggleIcon = document.getElementById('toggleIcon');
         const collapsibleSettings = document.getElementById('collapsibleSettings');
+        const enterFullscreenBtn = document.getElementById('enterFullscreen');
         
         let settingsExpanded = true;
 
         loadState();
 
-        // Predefined color palette with three saturation levels
         const colorPalette = [
-            // High saturation (vivid)
             { name: 'White', value: '#ffffff' },
             { name: 'Red', value: '#ef4444' },
             { name: 'Orange', value: '#f97316' },
@@ -532,7 +486,6 @@
             { name: 'Purple', value: '#a855f7' },
             { name: 'Pink', value: '#ec4899' },
             
-            // Medium saturation (muted)
             { name: 'Light Gray', value: '#d1d5db' },
             { name: 'Rose', value: '#fb7185' },
             { name: 'Peach', value: '#fdba74' },
@@ -544,7 +497,6 @@
             { name: 'Lavender', value: '#c4b5fd' },
             { name: 'Light Pink', value: '#f9a8d4' },
             
-            // Low saturation (pastel/dark)
             { name: 'Black', value: '#000000' },
             { name: 'Dark Red', value: '#991b1b' },
             { name: 'Brown', value: '#9a3412' },
@@ -590,18 +542,8 @@
             });
         }
 
-        function handleGridSizeChange(newSize) {
-            gridSize = newSize;
-            saveState();
-            handleAspectRatioChange(aspectRatio);
-        }
-
-        function gcd(a, b) {
-            return b === 0 ? a : gcd(b, a % b);
-        }
-
         function handleDurationPreset(time) {
-            stopFlashing(); // Stop any flashing
+            stopFlashing();
             const seconds = time / 1000;
             duration = time;
             timeLeft = time;
@@ -627,19 +569,38 @@
         }
 
         function createGrid() {
-            pixelGrid.innerHTML = '';
-            pixelGrid.style.gridTemplateColumns = `repeat(${gridWidth}, 1fr)`;
-            pixelGrid.style.gridTemplateRows = `repeat(${gridHeight}, 1fr)`;
+            pixelCanvas.width = gridWidth;
+            pixelCanvas.height = gridHeight;
             
-            const totalPixels = gridWidth * gridHeight;
-            for (let i = 0; i < totalPixels; i++) {
-                const pixel = document.createElement('div');
-                pixel.className = 'pixel';
-                pixel.style.backgroundColor = startColor;
-                pixelGrid.appendChild(pixel);
-            }
+            resizeCanvas();
+            
+            ctx.fillStyle = startColor;
+            ctx.fillRect(0, 0, gridWidth, gridHeight);
             
             generatePixelOrder();
+        }
+
+        function resizeCanvas() {
+            const container = gridContainer;
+            const aspectRatio = gridWidth / gridHeight;
+            
+            if (isFullscreen) {
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const viewportRatio = vw / vh;
+                
+                if (aspectRatio > viewportRatio) {
+                    pixelCanvas.style.width = vw + 'px';
+                    pixelCanvas.style.height = (vw / aspectRatio) + 'px';
+                } else {
+                    pixelCanvas.style.height = vh + 'px';
+                    pixelCanvas.style.width = (vh * aspectRatio) + 'px';
+                }
+            } else {
+                const containerWidth = container.clientWidth - 4;
+                pixelCanvas.style.width = containerWidth + 'px';
+                pixelCanvas.style.height = (containerWidth / aspectRatio) + 'px';
+            }
         }
 
         function getProgress() {
@@ -648,7 +609,7 @@
 
         function updatePixels() {
             if (isFlashing) {
-                return; // Don't update pixels while flashing
+                return;
             }
             
             const total = gridWidth * gridHeight;
@@ -656,43 +617,68 @@
             const pixelsFilled = Math.floor(progress * total);
             const filledSet = new Set(pixelOrder.slice(0, pixelsFilled));
             
-            // TODO this sets all the pixels each time and is very inefficient
-            const pixels = pixelGrid.querySelectorAll('.pixel');
-            pixels.forEach((pixel, i) => {
-                pixel.style.backgroundColor = filledSet.has(i) ? endColor : startColor;
-            });
+            for (let i = 0; i < total; i++) {
+                const x = i % gridWidth;
+                const y = Math.floor(i / gridWidth);
+                ctx.fillStyle = filledSet.has(i) ? endColor : startColor;
+                ctx.fillRect(x, y, 1, 1);
+            }
         }
         
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function interpolateColor(color1, color2, factor) {
+            const c1 = hexToRgb(color1);
+            const c2 = hexToRgb(color2);
+            
+            const r = Math.round(c1.r + factor * (c2.r - c1.r));
+            const g = Math.round(c1.g + factor * (c2.g - c1.g));
+            const b = Math.round(c1.b + factor * (c2.b - c1.b));
+            
+            return `rgb(${r},${g},${b})`;
+        }
+
         function startFlashing() {
             isFlashing = true;
-            let showEnd = true;
+            flashProgress = 0.5; // Start at end color (factor = 1)
+            lastFlashTime = performance.now();
             
-            // Set longer transition for smooth flashing
-            const pixels = pixelGrid.querySelectorAll('.pixel');
-            pixels.forEach(pixel => {
-                pixel.style.transition = 'background-color 1.5s ease-in-out';
-            });
+            function animateFlash(currentTime) {
+                if (!isFlashing) return;
+                
+                const deltaTime = currentTime - lastFlashTime;
+                lastFlashTime = currentTime;
+                
+                flashProgress += deltaTime / 2000;
+                
+                if (flashProgress >= 1) {
+                    flashProgress = 0;
+                }
+                
+                const factor = flashProgress < 0.5 
+                    ? flashProgress * 2
+                    : 2 - (flashProgress * 2);
+                
+                const color = interpolateColor(startColor, endColor, factor);
+                ctx.fillStyle = color;
+                ctx.fillRect(0, 0, gridWidth, gridHeight);
+                
+                requestAnimationFrame(animateFlash);
+            }
             
-            flashIntervalId = setInterval(() => {
-                const pixels = pixelGrid.querySelectorAll('.pixel');
-                pixels.forEach(pixel => {
-                    pixel.style.backgroundColor = showEnd ? endColor : startColor;
-                });
-                showEnd = !showEnd;
-            }, 2000); // Flash every 2 seconds
+            requestAnimationFrame(animateFlash);
         }
         
         function stopFlashing() {
             isFlashing = false;
-            if (flashIntervalId) {
-                clearInterval(flashIntervalId);
-                flashIntervalId = null;
-            }
-            // Reset transition speed to normal
-            const pixels = pixelGrid.querySelectorAll('.pixel');
-            pixels.forEach(pixel => {
-                pixel.style.transition = 'background-color 0.3s';
-            });
+            flashProgress = 0;
         }
 
         function formatTime(seconds) {
@@ -716,13 +702,12 @@
             if (!intervalId) {
                 saveState();
                 collapseSettings();
-                stopFlashing(); // Stop flashing when starting
+                stopFlashing();
                 isRunning = true;
                 startBtn.classList.add('hidden');
                 pauseBtn.classList.remove('hidden');
                 disableControls(true);
                 
-                // Request wake lock to prevent screen from sleeping
                 requestWakeLock();
                 
                 let lastIntervalTime = new Date().getTime();
@@ -736,7 +721,6 @@
                         timeLeft = 0;
                         updateDisplay();
                         handlePause();
-                        // Wait for final pixel animation to complete before flashing
                         setTimeout(() => {
                             startFlashing();
                         }, 100);
@@ -755,13 +739,12 @@
                 clearInterval(intervalId);
                 intervalId = null;
             }
-            // Release wake lock when pausing
             releaseWakeLock();
         }
 
         function handleReset() {
             handlePause();
-            stopFlashing(); // Stop flashing when resetting
+            stopFlashing();
             timeLeft = duration;
             updateDisplay();
         }
@@ -770,14 +753,8 @@
             try {
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    
-                    // Re-acquire wake lock if it's released (e.g., user switches tabs)
-                    wakeLock.addEventListener('release', () => {
-                        // Wake lock released
-                    });
                 }
             } catch (err) {
-                // Wake lock not available or not allowed - silently continue
             }
         }
         
@@ -788,7 +765,6 @@
                         wakeLock = null;
                     })
                     .catch((err) => {
-                        // Ignore release errors
                     });
             }
         }
@@ -799,14 +775,6 @@
             disableColorPalettes(disabled);
         }
 
-        function handleAspectRatioChange(ratio) {
-            // This function is no longer needed but kept for compatibility
-        }
-
-        function handleResolutionPreset(width, height) {
-            // This function is no longer needed but kept for compatibility
-        }
-
         function updateGridSizeLabel() {
             const total = gridWidth * gridHeight;
             gridSizeLabel.textContent = `${pixelSize}x${pixelSize} pixels (${total.toLocaleString()} total)`;
@@ -815,7 +783,7 @@
         function updateDurationLabel() {
             const totalSeconds = duration / 1000;
             if (totalSeconds >= 60) {
-                const mins = Math.floor(totalSeconds / 60 );
+                const mins = Math.floor(totalSeconds / 60);
                 const secs = totalSeconds % 60;
                 durationLabel.textContent = `${mins} min ${secs} sec`;
             } else {
@@ -824,70 +792,85 @@
         }
 
         function toggleFullscreen() {
-            isFullscreen = !isFullscreen;
-            
             if (isFullscreen) {
-                // Request actual browser fullscreen
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.webkitRequestFullscreen) {
-                    document.documentElement.webkitRequestFullscreen();
-                } else if (document.documentElement.msRequestFullscreen) {
-                    document.documentElement.msRequestFullscreen();
-                }
-                
-                document.body.classList.add('fullscreen-active');
-                mainContainer.classList.add('fullscreen-mode');
-                controls.classList.add('hidden');
-                gridContainer.style.padding = '0';
-                gridContainer.style.background = '#111827';
-                gridContainer.style.boxShadow = 'none';
-                
-                const exitBtn = document.createElement('button');
-                exitBtn.className = 'exit-fullscreen';
-                exitBtn.id = 'exitFullscreen';
-                exitBtn.innerHTML = '✕';
-                exitBtn.onclick = toggleFullscreen;
-                gridContainer.appendChild(exitBtn);
+                exitFullscreen();
             } else {
-                // Exit browser fullscreen
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                }
-                
-                document.body.classList.remove('fullscreen-active');
-                mainContainer.classList.remove('fullscreen-mode');
-                controls.classList.remove('hidden');
-                gridContainer.style.padding = '20px';
-                gridContainer.style.background = '#f9fafb';
-                gridContainer.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.1)';
-                
-                const exitBtn = document.getElementById('exitFullscreen');
-                if (exitBtn) exitBtn.remove();
+                enterFullscreen();
             }
         }
 
+        function enterFullscreen() {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+            
+            isFullscreen = true;
+            document.body.classList.add('fullscreen-active');
+            mainContainer.classList.add('fullscreen-mode');
+            controls.classList.add('hidden');
+            gridContainer.style.padding = '0';
+            gridContainer.style.background = '#111827';
+            gridContainer.style.boxShadow = 'none';
+            
+            enterFullscreenBtn.style.display = 'none';
+            
+            createGrid();
+            updateDisplay();
+            
+            const exitBtn = document.createElement('button');
+            exitBtn.className = 'exit-fullscreen';
+            exitBtn.id = 'exitFullscreen';
+            exitBtn.innerHTML = '✕';
+            exitBtn.onclick = toggleFullscreen;
+            gridContainer.appendChild(exitBtn);
+        }
+
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            
+            isFullscreen = false;
+            document.body.classList.remove('fullscreen-active');
+            mainContainer.classList.remove('fullscreen-mode');
+            controls.classList.remove('hidden');
+            gridContainer.style.padding = '20px';
+            gridContainer.style.background = '#f9fafb';
+            gridContainer.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.1)';
+            
+            enterFullscreenBtn.style.display = 'flex';
+            
+            createGrid();
+            updateDisplay();
+            
+            const exitBtn = document.getElementById('exitFullscreen');
+            if (exitBtn) exitBtn.remove();
+        }
+
         function storageAvailable(type) {
-          let storage;
-          try {
-            storage = window[type];
-            const x = "__storage_test__";
-            storage.setItem(x, x);
-            storage.removeItem(x);
-            return true;
-          } catch (e) {
-            return (
-              e instanceof DOMException &&
-              e.name === "QuotaExceededError" &&
-              // acknowledge QuotaExceededError only if there's something already stored
-              storage &&
-              storage.length !== 0
-            );
-          }
+            let storage;
+            try {
+                storage = window[type];
+                const x = "__storage_test__";
+                storage.setItem(x, x);
+                storage.removeItem(x);
+                return true;
+            } catch (e) {
+                return (
+                    e instanceof DOMException &&
+                    e.name === "QuotaExceededError" &&
+                    storage &&
+                    storage.length !== 0
+                );
+            }
         }
 
         function saveState() {
@@ -896,50 +879,42 @@
                 localStorage.setItem("setting.startColor", startColor);
                 localStorage.setItem("setting.endColor", endColor);
                 localStorage.setItem("setting.pixelSize", pixelSize);
-            } else {
-                console.error("Unable to save settings. Localstorage not available.");
             }
         }
 
         function loadState() {
-
             if (window.localStorage) {
                 let savedDuration = localStorage.getItem("setting.duration");
-                duration = savedDuration ? savedDuration : duration;
+                duration = savedDuration ? parseInt(savedDuration) : duration;
                 timeLeft = duration;
                 let savedStartColor = localStorage.getItem("setting.startColor");
                 startColor = savedStartColor ? savedStartColor : startColor;
                 let savedEndColor = localStorage.getItem("setting.endColor");
                 endColor = savedEndColor ? savedEndColor : endColor;
                 let savedPixelSize = localStorage.getItem("setting.pixelSize");
-                pixelSize = savedPixelSize ? savedPixelSize : pixelSize;
+                pixelSize = savedPixelSize ? parseInt(savedPixelSize) : pixelSize;
 
                 collapseSettings();
-            } else {
-                console.error("Unable to load settings. Localstorage not available.");
             }
         }
-
-            
         
-        // Handle ESC key to exit fullscreen
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && isFullscreen) {
-                toggleFullscreen();
+                exitFullscreen();
             }
         });
         
         document.addEventListener('webkitfullscreenchange', () => {
             if (!document.webkitFullscreenElement && isFullscreen) {
-                toggleFullscreen();
+                exitFullscreen();
             }
         });
 
-        // Event Listeners
         startBtn.addEventListener('click', handleStart);
         pauseBtn.addEventListener('click', handlePause);
         resetBtn.addEventListener('click', handleReset);
         fullscreenBtn.addEventListener('click', toggleFullscreen);
+        enterFullscreenBtn.addEventListener('click', toggleFullscreen);
 
         durationSlider.addEventListener('input', (e) => {
             duration = parseInt(e.target.value) * 1000;
@@ -954,14 +929,12 @@
             const index = parseInt(e.target.value);
             const requestedPixelSize = pixelSizes[index];
             
-            // Calculate what the total would be with this pixel size
             const vw = window.innerWidth;
             const vh = window.innerHeight;
             const testWidth = Math.floor(vw / requestedPixelSize);
             const testHeight = Math.floor(vh / requestedPixelSize);
             const testTotal = testWidth * testHeight;
             
-            // Only allow if under MAX_PIXELS pixels
             if (testTotal <= MAX_PIXELS) {
                 pixelSize = requestedPixelSize;
                 updateGridFromViewport();
@@ -970,11 +943,9 @@
                     updateDisplay();
                 }
             } else {
-                // Revert slider to current valid value
                 const currentIndex = pixelSizes.indexOf(pixelSize);
                 e.target.value = currentIndex;
                 
-                // Show a brief warning
                 const label = gridSizeLabel;
                 const originalText = label.textContent;
                 label.textContent = `Too many pixels! Maximum is ${MAX_PIXELS.toLocaleString()}. Use a larger pixel size.`;
@@ -988,17 +959,17 @@
         
         function setStartColor(color) {
             startColor = color;
+            saveState();
             updatePixels();
         }
 
         function setEndColor(color) {
             endColor = color;
+            saveState();
             updatePixels();
         }
 
-        // Color palette event handlers
         createColorPalette(startColorPalette, startColor, setStartColor);
-
         createColorPalette(endColorPalette, endColor, setEndColor);
         
         function expandSettings() {
@@ -1012,7 +983,7 @@
             toggleIcon.classList.remove('rotated');
             settingsExpanded = false;
         }
-        // Settings toggle
+
         settingsToggle.addEventListener('click', () => {
             if (settingsExpanded) {
                 collapseSettings();
@@ -1021,30 +992,28 @@
             }
         });
 
-        // Initialize
         updateGridFromViewport();
         createGrid();
         updateDisplay();
         updateDurationLabel();
         updateGridSizeLabel();
         
-        // Update grid when window is resized
         window.addEventListener('resize', () => {
             if (!isRunning) {
                 updateGridFromViewport();
                 createGrid();
                 updateDisplay();
+            } else {
+                resizeCanvas();
             }
         });
         
-        // Re-acquire wake lock when page becomes visible again
         document.addEventListener('visibilitychange', async () => {
             if (wakeLock !== null && document.visibilityState === 'visible' && isRunning) {
                 await requestWakeLock();
             }
         });
         
-        // Duration preset buttons - attach after DOM is ready
         setTimeout(() => {
             document.querySelectorAll('.preset-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
