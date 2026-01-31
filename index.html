@@ -904,12 +904,18 @@
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && isFullscreen) {
                 exitFullscreen();
+            } else if (document.fullscreenElement && isFullscreen) {
+                // Fullscreen transition completed, resize canvas with correct dimensions
+                resizeCanvas();
             }
         });
         
         document.addEventListener('webkitfullscreenchange', () => {
             if (!document.webkitFullscreenElement && isFullscreen) {
                 exitFullscreen();
+            } else if (document.webkitFullscreenElement && isFullscreen) {
+                // Fullscreen transition completed, resize canvas with correct dimensions
+                resizeCanvas();
             }
         });
 
@@ -1017,15 +1023,13 @@
             }
         });
         
-        setTimeout(() => {
-            document.querySelectorAll('.preset-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const time = parseInt(btn.getAttribute('data-time'));
-                    handleDurationPreset(time);
-                });
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const time = parseInt(btn.getAttribute('data-time'));
+                handleDurationPreset(time);
             });
-        }, 100);
+        });
     </script>
 </body>
 </html>
