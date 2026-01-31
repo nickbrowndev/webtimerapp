@@ -38,12 +38,17 @@
         .container.fullscreen-mode {
             position: fixed;
             inset: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             background: #111827;
             box-shadow: none;
             border-radius: 0;
             max-width: 100%;
             z-index: 9999;
             padding: 0;
+            display: flex;
+            flex-direction: column;
         }
         
         .grid-container {
@@ -66,8 +71,8 @@
         }
         
         .fullscreen-mode .grid-container {
+            flex: 1;
             width: 100%;
-            height: 100%;
             margin: 0;
             border-radius: 0;
             padding: 0;
@@ -752,6 +757,7 @@
                 state.isRunning = false;
                 clearInterval(state.timerIntervalId);
                 
+                grid.drawPixels(); // Preserve current state on canvas
                 ui.updateButtons('paused');
                 ui.disableControls(false);
                 wakeLock.release();
@@ -1111,8 +1117,11 @@
                     state.pixelSize = requestedPixelSize;
                     grid.updateFromViewport();
                     grid.create();
-                    if (!state.isRunning) {
+                    if (!state.isRunning && !state.isPaused) {
                         ui.updateDisplay();
+                    } else if (state.isPaused) {
+                        // Redraw at current progress when paused
+                        grid.drawPixels();
                     }
                 } else {
                     const currentIndex = CONFIG.PIXEL_SIZES.indexOf(state.pixelSize);
@@ -1122,10 +1131,14 @@
             },
 
             onResize() {
-                if (!state.isRunning) {
+                if (!state.isRunning && !state.isPaused) {
                     grid.updateFromViewport();
                     grid.create();
                     ui.updateDisplay();
+                } else if (state.isPaused) {
+                    grid.updateFromViewport();
+                    grid.create();
+                    grid.drawPixels();
                 } else {
                     grid.resize();
                 }
