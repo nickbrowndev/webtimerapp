@@ -588,8 +588,8 @@
             const aspectRatio = gridWidth / gridHeight;
             
             if (isFullscreen) {
-                const vw = window.screen.width;
-                const vh = window.screen.height;
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
                 const viewportRatio = vw / vh;
                 
                 if (aspectRatio > viewportRatio) {
