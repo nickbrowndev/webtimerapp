@@ -64,6 +64,7 @@
         .fullscreen-mode .grid-container {
             width: 100vw;
             height: 100vh;
+            height: 100dvh; /* Use dynamic viewport height on mobile */
             margin: 0;
             border-radius: 0;
             padding: 0;
@@ -73,6 +74,7 @@
         .fullscreen-mode #pixelCanvas {
             max-width: 100vw;
             max-height: 100vh;
+            max-height: 100dvh; /* Use dynamic viewport height on mobile */
             width: auto;
             height: auto;
         }
@@ -240,6 +242,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
+            height: 100dvh; /* Use dynamic viewport height on mobile */
             background: #111827;
             z-index: 9999;
             padding: 0;
