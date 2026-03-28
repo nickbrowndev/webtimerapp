@@ -130,41 +130,6 @@
             cursor: not-allowed;
         }
 
-        .color-palette {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 4px;
-            width: 100%;
-        }
-
-        .color-swatch {
-            width: 100%;
-            aspect-ratio: 1;
-            border: 2px solid transparent;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            min-width: 0;
-        }
-
-        .color-swatch:hover {
-            transform: scale(1.1);
-            z-index: 1;
-        }
-
-        .color-swatch.selected {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-            transform: scale(1.1);
-            z-index: 2;
-        }
-
-        .color-swatch:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         button {
             padding: 12px 24px;
             border: none;
@@ -382,13 +347,13 @@
                     </div>
 
                     <div class="control-group">
-                        <label>Start Color</label>
-                        <div class="color-palette" id="startColorPalette"></div>
+                        <label for="startColor">Start Color</label>
+                        <input type="color" id="startColor">
                     </div>
 
                     <div class="control-group">
-                        <label>End Color</label>
-                        <div class="color-palette" id="endColorPalette"></div>
+                        <label for="endColor">End Color</label>
+                        <input type="color" id="endColor">
                     </div>
                 </div>
             </div>
@@ -422,41 +387,6 @@
             }
         };
 
-        const COLOR_PALETTE = [
-            { name: 'White', value: '#ffffff' },
-            { name: 'Red', value: '#ef4444' },
-            { name: 'Orange', value: '#f97316' },
-            { name: 'Yellow', value: '#eab308' },
-            { name: 'Lime', value: '#84cc16' },
-            { name: 'Green', value: '#22c55e' },
-            { name: 'Cyan', value: '#06b6d4' },
-            { name: 'Blue', value: '#3b82f6' },
-            { name: 'Purple', value: '#a855f7' },
-            { name: 'Pink', value: '#ec4899' },
-            
-            { name: 'Light Gray', value: '#d1d5db' },
-            { name: 'Rose', value: '#fb7185' },
-            { name: 'Peach', value: '#fdba74' },
-            { name: 'Sand', value: '#fde047' },
-            { name: 'Light Lime', value: '#bef264' },
-            { name: 'Mint', value: '#86efac' },
-            { name: 'Sky', value: '#7dd3fc' },
-            { name: 'Light Blue', value: '#93c5fd' },
-            { name: 'Lavender', value: '#c4b5fd' },
-            { name: 'Light Pink', value: '#f9a8d4' },
-            
-            { name: 'Black', value: '#000000' },
-            { name: 'Dark Red', value: '#991b1b' },
-            { name: 'Brown', value: '#9a3412' },
-            { name: 'Olive', value: '#854d0e' },
-            { name: 'Dark Lime', value: '#3f6212' },
-            { name: 'Dark Green', value: '#166534' },
-            { name: 'Teal', value: '#115e59' },
-            { name: 'Navy', value: '#1e3a8a' },
-            { name: 'Dark Purple', value: '#6b21a8' },
-            { name: 'Magenta', value: '#9f1239' }
-        ];
-
         // ============================================================================
         // DOM ELEMENTS
         // ============================================================================
@@ -470,8 +400,8 @@
             durationLabel: document.getElementById('durationLabel'),
             gridSizeSlider: document.getElementById('gridSizeSlider'),
             gridSizeLabel: document.getElementById('gridSizeLabel'),
-            startColorPalette: document.getElementById('startColorPalette'),
-            endColorPalette: document.getElementById('endColorPalette'),
+            startColor: document.getElementById('startColor'),
+            endColor: document.getElementById('endColor'),
             startBtn: document.getElementById('startBtn'),
             pauseBtn: document.getElementById('pauseBtn'),
             resetBtn: document.getElementById('resetBtn'),
@@ -903,35 +833,7 @@
         // ============================================================================
         // COLOR PALETTE
         // ============================================================================
-        
-        const colorPalette = {
-            create(paletteElement, selectedColor, callback) {
-                paletteElement.innerHTML = '';
-                COLOR_PALETTE.forEach(color => {
-                    const swatch = document.createElement('button');
-                    swatch.className = 'color-swatch';
-                    swatch.style.backgroundColor = color.value;
-                    swatch.title = color.name;
-                    swatch.dataset.color = color.value;
-                    
-                    if (color.value === selectedColor) {
-                        swatch.classList.add('selected');
-                    }
-                    
-                    swatch.addEventListener('click', () => {
-                        if (!state.isRunning) {
-                            paletteElement.querySelectorAll('.color-swatch').forEach(s => {
-                                s.classList.remove('selected');
-                            });
-                            swatch.classList.add('selected');
-                            callback(color.value);
-                        }
-                    });
-                    
-                    paletteElement.appendChild(swatch);
-                });
-            },
-
+        const color = {
             setStartColor(color) {
                 state.startColor = color;
                 storage.save();
@@ -942,8 +844,8 @@
                 state.endColor = color;
                 storage.save();
                 grid.drawPixels();
-            }
-        };
+            },
+        }
 
         // ============================================================================
         // FULLSCREEN MANAGEMENT
@@ -1175,18 +1077,6 @@
             // Load saved state
             storage.load();
             
-            // Create color palettes
-            colorPalette.create(
-                elements.startColorPalette, 
-                state.startColor, 
-                colorPalette.setStartColor
-            );
-            colorPalette.create(
-                elements.endColorPalette, 
-                state.endColor, 
-                colorPalette.setEndColor
-            );
-            
             // Set up event listeners
             elements.startBtn.addEventListener('click', () => timer.start());
             elements.pauseBtn.addEventListener('click', () => timer.pause());
@@ -1194,6 +1084,11 @@
             elements.fullscreenBtn.addEventListener('click', () => fullscreen.toggle());
             elements.enterFullscreenBtn.addEventListener('click', () => fullscreen.toggle());
             elements.settingsToggle.addEventListener('click', () => settings.toggle());
+
+            elements.startColor.value = state.startColor;
+            elements.startColor.addEventListener("change", (event) => color.setStartColor(event.target.value)); 
+            elements.endColor.value = state.endColor;
+            elements.endColor.addEventListener("change", (event) => color.setEndColor(event.target.value)); 
             
             elements.durationSlider.addEventListener('input', eventHandlers.onDurationChange);
             elements.gridSizeSlider.addEventListener('input', eventHandlers.onGridSizeChange);
