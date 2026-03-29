@@ -148,9 +148,9 @@
             cursor: not-allowed;
         }
 
-        .duration-presets {
+        .presets {
             display: flex;
-            justify-content: left;
+            justify-content: center;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
@@ -163,6 +163,25 @@
         }
 
         .preset-btn:hover:not(:disabled) {
+            background: #d1d5db;
+        }
+
+        .duration-presets {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .time-preset-btn {
+            background: #e5e7eb;
+            color: #374151;
+            flex: 0 0 5rem;
+            justify-content: center;
+        }
+
+        .time-preset-btn:hover:not(:disabled) {
             background: #d1d5db;
         }
 
@@ -318,15 +337,21 @@
                 <button class="btn-fullscreen" id="fullscreenBtn">⛶ Fullscreen</button>
             </div>
 
+            <div class="presets">
+                <button class="preset-btn" data-name="POMODORO_WORK">Work</button>
+                <button class="preset-btn" data-name="POMODORO_BREAK">Break</button>
+                <button class="preset-btn" data-name="POMODORO_REST">Rest</button>
+            </div>
+
             <div class="duration-presets">
-                <button class="preset-btn" data-time="60000">1:00</button>
-                <button class="preset-btn" data-time="300000">5:00</button>
-                <button class="preset-btn" data-time="600000">10:00</button>
-                <button class="preset-btn" data-time="900000">15:00</button>
-                <button class="preset-btn" data-time="1200000">20:00</button>
-                <button class="preset-btn" data-time="1500000">25:00</button>
-                <button class="preset-btn" data-time="1800000">30:00</button>
-                <button class="preset-btn" data-time="3000000">50:00</button>
+                <button class="time-preset-btn" data-time="60000">1:00</button>
+                <button class="time-preset-btn" data-time="300000">5:00</button>
+                <button class="time-preset-btn" data-time="600000">10:00</button>
+                <button class="time-preset-btn" data-time="900000">15:00</button>
+                <button class="time-preset-btn" data-time="1200000">20:00</button>
+                <button class="time-preset-btn" data-time="1500000">25:00</button>
+                <button class="time-preset-btn" data-time="1800000">30:00</button>
+                <button class="time-preset-btn" data-time="3000000">50:00</button>
             </div>
 
             <div class="settings-section">
@@ -391,6 +416,24 @@
             }
         };
 
+        var POMODORO_WORK = { 
+            duration: 25 * 60 * 1000,
+            startColor: '#BC1528',
+            endColor: '#262626',
+        };
+
+        var POMODORO_BREAK = { 
+            duration: 5 * 60 * 1000,
+            startColor: '#28BC15',
+            endColor: '#262626',
+        };
+
+        var POMODORO_REST = { 
+            duration: 20 * 60 * 1000,
+            startColor: '#1528BC',
+            endColor: '#262626',
+        };
+
         // ============================================================================
         // DOM ELEMENTS
         // ============================================================================
@@ -425,7 +468,6 @@
         
         const state = {
             duration: CONFIG.DEFAULT_DURATION,
-            timeLeft: CONFIG.DEFAULT_DURATION,
             startColor: CONFIG.DEFAULT_START_COLOR,
             endColor: CONFIG.DEFAULT_END_COLOR,
             pixelSize: CONFIG.DEFAULT_PIXEL_SIZE,
@@ -725,10 +767,8 @@
 
             setDuration(milliseconds) {
                 state.duration = milliseconds;
-                if (!state.isRunning) {
-                    state.timeLeft = milliseconds;
-                    ui.updateDisplay();
-                }
+                state.timeLeft = milliseconds;
+                ui.updateDisplay();
                 ui.updateDurationLabel();
             },
 
@@ -737,6 +777,10 @@
                 const seconds = milliseconds / 1000;
                 this.setDuration(milliseconds);
                 elements.durationSlider.value = seconds;
+
+                if (state.isRunning) {
+                    this.reset();
+                }
                 this.start();
             }
         };
@@ -1068,6 +1112,15 @@
 
             onPresetClick(e) {
                 e.preventDefault();
+                const name = e.target.getAttribute('data-name');
+                const presetConfig = window[name];
+                color.setStartColor(presetConfig.startColor);
+                color.setEndColor(presetConfig.endColor);
+                timer.setDurationFromPreset(presetConfig.duration);
+            },
+            
+            onTimePresetClick(e) {
+                e.preventDefault();
                 const time = parseInt(e.target.getAttribute('data-time'));
                 timer.setDurationFromPreset(time);
             }
@@ -1103,6 +1156,10 @@
             
             document.querySelectorAll('.preset-btn').forEach(btn => {
                 btn.addEventListener('click', eventHandlers.onPresetClick);
+            });
+            
+            document.querySelectorAll('.time-preset-btn').forEach(btn => {
+                btn.addEventListener('click', eventHandlers.onTimePresetClick);
             });
             
             // Initialize grid and display
